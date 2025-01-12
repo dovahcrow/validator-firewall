@@ -45,6 +45,8 @@ struct HVFConfig {
     external_ip_service_url: Option<String>,
     #[clap(short, long)]
     query_file: Option<PathBuf>,
+    #[clap(short, long, default_value = "10")]
+    stats_interval: u64,
 }
 
 const DENY_LIST_MAP: &str = "hvf_deny_list";
@@ -204,8 +206,11 @@ async fn main() -> Result<(), anyhow::Error> {
 
     //Start the stats service
     let stats_exit = exit.clone();
-    let stats_service =
-        stats_service::StatsService::new(stats_exit, 10, bpf.take_map(CONNECTION_STATS).unwrap());
+    let stats_service = stats_service::StatsService::new(
+        stats_exit,
+        config.stats_interval,
+        bpf.take_map(CONNECTION_STATS).unwrap(),
+    );
     let stats_handle = tokio::spawn(async move {
         stats_service.run().await;
     });
